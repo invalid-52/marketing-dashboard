@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AXIOM | Revenue Intelligence & Sales Performance System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #030508;
+  --surface: rgba(8,12,22,0.85);
+  --surface2: rgba(6,10,18,0.95);
+  --surface3: rgba(12,18,32,0.7);
+  --accent: #3d7fff;
+  --accent2: #60a5fa;
+  --emerald: #00e5a0;
+  --amber: #f59e0b;
+  --red: #ff3355;
+  --purple: #8b5cf6;
+  --cyan: #06b6d4;
+  --gold: #d4a017;
+  --border: rgba(255,255,255,0.06);
+  --border-glow: rgba(61,127,255,0.3);
+  --text: #e2eaff;
+  --text2: #5a6a8a;
+  --text3: #2a3a5a;
+  --glow-b: 0 0 30px rgba(61,127,255,0.25);
+  --glow-g: 0 0 30px rgba(0,229,160,0.2);
+  --glow-r: 0 0 30px rgba(255,51,85,0.2);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{color:var(--text);font-family:'Outfit',sans-serif;cursor:crosshair}
+.mono{font-family:'DM Mono',monospace}
+.syne{font-family:'Syne',sans-serif}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:rgba(61,127,255,0.25);border-radius:2px}
+
+/* PRELOADER */
+#preloader{
+  position:fixed;inset:0;background:#000;z-index:10000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2rem;
+}
+.scan-line{
+  position:absolute;width:100%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  top:0;animation:scan 2.5s infinite linear;
+  box-shadow:0 0 20px var(--accent);
+}
+@keyframes scan{from{top:0}to{top:100%}}
+.pl-ring{
+  width:80px;height:80px;border-radius:50%;
+  border:1px solid rgba(61,127,255,0.15);
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.pl-ring::before{
+  content:'';position:absolute;inset:-3px;border-radius:50%;
+  border:2px solid transparent;border-top-color:var(--accent);
+  animation:spin 1.2s linear infinite;
+}
+.pl-ring::after{
+  content:'';position:absolute;inset:-8px;border-radius:50%;
+  border:1px solid transparent;border-top-color:rgba(61,127,255,0.3);
+  animation:spin 2s linear infinite reverse;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pl-core{
+  width:40px;height:40px;
+  background:radial-gradient(circle,var(--accent),#1a4fd8);
+  border-radius:50%;box-shadow:0 0 40px var(--accent),0 0 80px rgba(61,127,255,0.3);
+}
+.pl-title{
+  font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;
+  letter-spacing:.4em;text-transform:uppercase;
+  background:linear-gradient(90deg,var(--accent),var(--cyan),var(--emerald));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.pl-sub{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--accent);letter-spacing:.4em;text-transform:uppercase;opacity:.7}
+.pl-bar-wrap{width:260px;height:1px;background:rgba(255,255,255,0.04);border-radius:2px;overflow:hidden}
+.pl-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--emerald));width:0;transition:width .04s;box-shadow:0 0 10px var(--accent)}
+.pl-steps{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text2);letter-spacing:.1em;min-height:1rem}
+
+/* BG */
+#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#cursor-glow{
+  width:600px;height:600px;
+  background:radial-gradient(circle,rgba(61,127,255,.06) 0%,transparent 70%);
+  position:fixed;pointer-events:none;z-index:1;transform:translate(-50%,-50%);
+}
+
+/* APP */
+#app{display:flex;height:100vh;width:100vw;opacity:0;position:relative;z-index:10}
+
+/* SIDEBAR */
+.sidebar{
+  width:260px;background:var(--surface2);backdrop-filter:blur(40px);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  height:100%;flex-shrink:0;z-index:50;transition:width .2s;
+}
+.sidebar.mini{width:54px}
+.sidebar.mini .nav-text,.sidebar.mini .nav-badge,.sidebar.mini .s-section,
+.sidebar.mini .logo-text,.sidebar.mini .status-text{display:none}
+.s-head{padding:1.5rem 1.2rem 1rem}
+.logo-row{display:flex;align-items:center;gap:10px;margin-bottom:2rem}
+.logo-gem{
+  width:36px;height:36px;background:var(--surface);
+  border:1px solid rgba(61,127,255,.35);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  transform:rotate(45deg);transition:transform .4s;flex-shrink:0;cursor:pointer;
+}
+.logo-gem:hover{transform:rotate(135deg)}
+.logo-gem-inner{width:18px;height:18px;background:var(--accent);border-radius:4px;transform:rotate(-45deg);box-shadow:0 0 16px var(--accent)}
+.logo-text{display:flex;flex-direction:column}
+.logo-name{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;letter-spacing:-.3px;line-height:1}
+.logo-caption{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--accent);letter-spacing:.18em;text-transform:uppercase;margin-top:2px}
+.s-section{font-size:.55rem;font-weight:700;text-transform:uppercase;letter-spacing:.25em;color:rgba(255,255,255,.18);padding:.5rem 1rem .25rem;margin-top:.3rem}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:.55rem 1rem;margin:1px .35rem;
+  border-radius:10px;cursor:pointer;transition:all .18s;color:var(--text2);
+  white-space:nowrap;overflow:hidden;position:relative;
+}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.035)}
+.nav-item.on{
+  color:var(--accent2);background:rgba(61,127,255,.1);
+  border-right:2px solid var(--accent);
+  box-shadow:inset -10px 0 18px -10px rgba(61,127,255,.3);
+}
+.nav-icon{font-size:.85rem;flex-shrink:0;width:18px;text-align:center}
+.nav-text{font-size:.75rem;font-weight:600;letter-spacing:.02em}
+.nav-badge{margin-left:auto;padding:1px 5px;border-radius:6px;font-size:.55rem;font-weight:700;background:var(--red);color:#fff;flex-shrink:0}
+.nav-badge.y{background:var(--amber);color:#000}
+.nav-badge.g{background:var(--emerald);color:#000}
+.s-foot{margin-top:auto;padding:1rem;border-top:1px solid var(--border)}
+.status-pill{background:rgba(61,127,255,.05);border:1px solid rgba(61,127,255,.1);padding:.6rem;border-radius:10px;display:flex;align-items:center;gap:8px}
+.status-dot{width:7px;height:7px;background:var(--emerald);border-radius:50%;animation:pulse-d 1.4s infinite;box-shadow:0 0 8px var(--emerald)}
+@keyframes pulse-d{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.65)}}
+.status-text{display:flex;flex-direction:column}
+.st-label{font-size:.65rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em}
+.st-sub{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--text2)}
+
+/* MAIN */
+.main-wrap{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.topbar{
+  height:54px;background:var(--surface2);backdrop-filter:blur(40px);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  padding:0 1.8rem;gap:.8rem;flex-shrink:0;z-index:40;
+}
+.tb-title{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700}
+.tb-sep{flex:1}
+.tb-badge{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 9px;
+  border-radius:20px;font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+}
+.tb-ok{background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.15);color:var(--emerald)}
+.tb-warn{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.15);color:var(--amber)}
+.tbtn{
+  background:transparent;border:1px solid var(--border);color:var(--text2);
+  padding:5px 13px;border-radius:20px;cursor:pointer;font-size:.68rem;
+  font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  display:flex;align-items:center;gap:4px;transition:all .18s;
+}
+.tbtn:hover{border-color:var(--accent);color:var(--text)}
+.tbtn.acc{background:var(--accent);color:#fff;border:none;font-weight:800;box-shadow:var(--glow-b)}
+.tbtn.acc:hover{transform:scale(1.04)}
+.tbtn.ai{background:linear-gradient(135deg,#5b21b6,#8b5cf6);color:#fff;border:none;font-weight:800;box-shadow:0 0 24px rgba(139,92,246,.4)}
+.tbtn.ai:hover{transform:scale(1.04)}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800;cursor:pointer;border:2px solid rgba(61,127,255,.3)}
+.top-clock{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text2)}
+.sel{background:rgba(8,12,22,.9);border:1px solid var(--border);color:var(--text);padding:4px 9px;border-radius:8px;font-size:.7rem;outline:none;cursor:pointer;font-family:'Outfit',sans-serif}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:1.5rem 2rem;position:relative;z-index:10}
+.view{display:none;animation:viewIn .3s ease both}
+.view.on{display:block}
+@keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARDS */
+.card{
+  background:var(--surface);backdrop-filter:blur(30px);
+  border:1px solid var(--border);border-radius:16px;
+  transition:border-color .2s,box-shadow .2s;
+}
+.card:hover{border-color:rgba(61,127,255,.2);box-shadow:0 4px 40px rgba(0,0,0,.3)}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.2rem .6rem;border-bottom:1px solid var(--border)}
+.card-title{font-family:'Syne',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:.03em}
+.card-sub{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--text2);margin-top:1px}
+.card-body{padding:1rem 1.2rem}
+
+/* GRID */
+.g12{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem}
+.c2{grid-column:span 2}.c3{grid-column:span 3}.c4{grid-column:span 4}
+.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}
+.c8{grid-column:span 8}.c9{grid-column:span 9}.c12{grid-column:span 12}
+
+/* KPI CARDS */
+.kpi-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:1.1rem 1.2rem;position:relative;overflow:hidden;transition:all .2s;cursor:default;
+}
+.kpi-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--kpi-color,var(--accent)),transparent);
+  opacity:.6;
+}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(0,0,0,.4)}
+.kpi-label{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--text2);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.5rem}
+.kpi-value{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:800;line-height:1;margin-bottom:.4rem}
+.kpi-delta{font-size:.7rem;font-weight:600;display:inline-flex;align-items:center;gap:3px}
+.kpi-delta.up{color:var(--emerald)}
+.kpi-delta.dn{color:var(--red)}
+.kpi-delta.ne{color:var(--amber)}
+.kpi-spark{margin-top:.6rem}
+.kpi-tag{font-size:.58rem;color:var(--text2);margin-top:.25rem}
+.kpi-glow{position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;filter:blur(30px);opacity:.12}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.badge.ok{background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);color:var(--emerald)}
+.badge.warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:var(--amber)}
+.badge.err{background:rgba(255,51,85,.08);border:1px solid rgba(255,51,85,.2);color:var(--red)}
+.badge.info{background:rgba(61,127,255,.08);border:1px solid rgba(61,127,255,.2);color:var(--accent2)}
+.badge.ai{background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);color:#a78bfa}
+.dp{width:6px;height:6px;border-radius:50%;display:inline-block}
+.dp.dg{background:var(--emerald);box-shadow:0 0 6px var(--emerald)}
+.dp.da{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+.dp.dr{background:var(--red);box-shadow:0 0 6px var(--red)}
+.dp.db{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+
+/* SECTION HEADING */
+.section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.section-title{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700}
+.section-meta{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text2)}
+
+/* HERO CHART AREA */
+.hero-chart-wrap{position:relative;height:220px}
+.hero-overlay{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  background:linear-gradient(to right,rgba(3,5,8,.8),transparent 20%,transparent 80%,rgba(3,5,8,.8));
+  pointer-events:none;z-index:2;
+}
+.hero-stat{position:absolute;top:12px;left:14px;z-index:3}
+.hero-forecast-badge{
+  position:absolute;top:12px;right:14px;z-index:3;
+  background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.2);
+  padding:5px 12px;border-radius:20px;font-family:'DM Mono',monospace;
+  font-size:.6rem;color:var(--emerald);
+}
+
+/* FUNNEL */
+.funnel-stage{
+  display:flex;align-items:center;gap:1rem;padding:.6rem .8rem;
+  border-radius:10px;margin-bottom:4px;transition:all .18s;cursor:default;
+  border:1px solid transparent;
+}
+.funnel-stage:hover{background:rgba(255,255,255,.03);border-color:var(--border)}
+.funnel-bar-wrap{flex:1;height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden}
+.funnel-bar{height:100%;border-radius:3px;transition:width .8s ease}
+.funnel-label{font-size:.72rem;font-weight:600;width:90px;flex-shrink:0}
+.funnel-count{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text2);width:55px;text-align:right;flex-shrink:0}
+.funnel-pct{font-family:'DM Mono',monospace;font-size:.6rem;width:38px;text-align:right;flex-shrink:0}
+
+/* AI INSIGHTS */
+.ai-card{
+  background:rgba(139,92,246,.04);border:1px solid rgba(139,92,246,.15);
+  border-radius:12px;padding:.9rem 1rem;margin-bottom:.6rem;
+  transition:all .2s;cursor:pointer;
+}
+.ai-card:hover{background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.3)}
+.ai-card-head{display:flex;align-items:center;gap:8px;margin-bottom:.4rem}
+.ai-card-title{font-size:.75rem;font-weight:700;color:#c4b5fd}
+.ai-card-body{font-size:.72rem;color:var(--text2);line-height:1.55}
+.ai-card-footer{margin-top:.5rem;display:flex;align-items:center;gap:.5rem}
+.conf-bar-wrap{flex:1;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.conf-bar{height:100%;border-radius:2px;background:linear-gradient(90deg,#7c3aed,#c084fc)}
+.conf-label{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--text2)}
+
+/* RISK CARD */
+.risk-card{
+  border-radius:12px;padding:.8rem 1rem;margin-bottom:.5rem;
+  transition:all .2s;cursor:pointer;display:flex;align-items:center;gap:.8rem;
+}
+.risk-card.crit{background:rgba(255,51,85,.05);border:1px solid rgba(255,51,85,.15)}
+.risk-card.warn{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.15)}
+.risk-card.opp{background:rgba(0,229,160,.05);border:1px solid rgba(0,229,160,.15)}
+.risk-card:hover{transform:translateX(4px)}
+.risk-icon{font-size:1.1rem;flex-shrink:0}
+.risk-body{flex:1}
+.risk-title{font-size:.73rem;font-weight:700}
+.risk-desc{font-size:.65rem;color:var(--text2);margin-top:2px;line-height:1.4}
+.risk-tag{font-size:.58rem;padding:2px 7px;border-radius:6px;font-weight:700;text-transform:uppercase}
+
+/* REP TABLE */
+.rep-row{
+  display:flex;align-items:center;gap:1rem;padding:.65rem .8rem;
+  border-radius:10px;margin-bottom:3px;transition:all .18s;cursor:default;
+}
+.rep-row:hover{background:rgba(255,255,255,.03)}
+.rep-rank{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text2);width:20px;flex-shrink:0}
+.rep-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;flex-shrink:0}
+.rep-name{font-size:.73rem;font-weight:600;flex:1}
+.rep-metric{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text2);width:70px;text-align:right}
+.rep-bar-wrap{width:60px;height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+.rep-bar{height:100%;border-radius:2px}
+
+/* SCENARIO LAB */
+.sim-slider-wrap{margin-bottom:1rem}
+.sim-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem}
+.sim-name{font-size:.72rem;font-weight:600}
+.sim-val{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--accent2)}
+input[type=range]{width:100%;height:3px;-webkit-appearance:none;background:rgba(255,255,255,.08);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);cursor:pointer}
+.sim-output{
+  background:rgba(61,127,255,.05);border:1px solid rgba(61,127,255,.15);
+  border-radius:12px;padding:1rem;margin-top:1rem;
+}
+.sim-out-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.7rem}
+.sim-out-item{}
+.sim-out-label{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--text2);text-transform:uppercase;letter-spacing:.1em}
+.sim-out-val{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;margin-top:2px}
+.sim-out-val.pos{color:var(--emerald)}
+.sim-out-val.neg{color:var(--red)}
+
+/* MAP AREA */
+.map-wrap{position:relative;height:280px;overflow:hidden;border-radius:12px;background:rgba(8,12,22,.8)}
+.map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(61,127,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(61,127,255,.04) 1px,transparent 1px);background-size:40px 40px}
+.region-bubble{
+  position:absolute;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;cursor:pointer;transition:all .25s;
+  border:1px solid rgba(255,255,255,.1);
+}
+.region-bubble:hover{transform:scale(1.12);z-index:10}
+.rb-label{font-family:'DM Mono',monospace;font-size:.5rem;color:#fff;font-weight:700;text-align:center;line-height:1.2}
+.rb-val{font-size:.6rem;font-weight:800;font-family:'Syne',sans-serif}
+
+/* FORECAST */
+.forecast-stat{padding:.8rem 1rem;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid var(--border);margin-bottom:.5rem}
+.forecast-stat-row{display:flex;align-items:center;justify-content:space-between}
+.forecast-label{font-size:.68rem;color:var(--text2)}
+.forecast-val{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700}
+
+/* AI THINK */
+.ai-think{display:flex;align-items:center;gap:4px;color:var(--purple)}
+.ai-think span{width:5px;height:5px;border-radius:50%;background:currentColor;animation:think .9s infinite both}
+.ai-think span:nth-child(2){animation-delay:.18s}
+.ai-think span:nth-child(3){animation-delay:.36s}
+@keyframes think{0%,80%,100%{opacity:.2;transform:scale(.7)}40%{opacity:1;transform:scale(1)}}
+
+/* TOAST */
+#toastWrap{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9000;display:flex;flex-direction:column;gap:.4rem;pointer-events:none}
+.toast{
+  background:rgba(8,12,22,.95);border:1px solid var(--border);border-left:3px solid var(--accent);
+  padding:.6rem 1rem;border-radius:10px;font-size:.72rem;
+  display:flex;align-items:center;gap:.6rem;backdrop-filter:blur(20px);
+  animation:toastIn .25s ease;pointer-events:none;max-width:280px;
+}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* NOTIF PANEL */
+.notif{position:relative;cursor:pointer}
+.notif-d{
+  position:absolute;top:-4px;right:-4px;width:16px;height:16px;
+  background:var(--red);border-radius:50%;font-size:.55rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 10px var(--red);
+}
+.notif-panel{
+  position:absolute;top:calc(100% + 12px);right:0;width:310px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:14px;
+  backdrop-filter:blur(40px);z-index:200;overflow:hidden;
+  opacity:0;pointer-events:none;transform:translateY(-8px);
+  transition:all .2s;
+}
+.notif-panel.on{opacity:1;pointer-events:auto;transform:translateY(0)}
+.np-head{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1rem;border-bottom:1px solid var(--border)}
+.np-title{font-family:'Syne',sans-serif;font-size:.8rem;font-weight:700}
+.np-item{padding:.7rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.np-item:hover{background:rgba(255,255,255,.03)}
+.np-item.unread{background:rgba(61,127,255,.04)}
+.np-item-title{font-size:.72rem;font-weight:600}
+.np-item-body{font-size:.65rem;color:var(--text2);margin-top:2px}
+.np-item-time{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--text3);margin-top:3px}
+
+/* TABS */
+.tabs{display:flex;gap:.2rem;margin-bottom:1.2rem;background:rgba(255,255,255,.02);padding:3px;border-radius:10px;width:fit-content}
+.tab{padding:5px 14px;border-radius:8px;font-size:.7rem;font-weight:600;cursor:pointer;transition:all .15s;color:var(--text2)}
+.tab.on{background:rgba(61,127,255,.15);color:var(--accent2)}
+.tab:hover:not(.on){background:rgba(255,255,255,.04);color:var(--text)}
+
+/* PRODUCT TABLE */
+.prod-row{display:flex;align-items:center;gap:.8rem;padding:.5rem .6rem;border-radius:8px;transition:background .15s;cursor:default}
+.prod-row:hover{background:rgba(255,255,255,.03)}
+.prod-name{font-size:.72rem;font-weight:600;flex:1}
+.prod-rev{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text2);width:70px;text-align:right}
+.prod-bar-wrap{width:80px;height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+.prod-bar{height:100%;border-radius:2px}
+.prod-pct{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text2);width:35px;text-align:right}
+
+/* SCROLL */
+.scroll-inner{overflow-y:auto;max-height:calc(100vh - 130px);padding-bottom:2rem}
+
+/* GLOWING NUMBER */
+.glow-num{
+  background:linear-gradient(135deg,#fff,var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.glow-g{background:linear-gradient(135deg,var(--emerald),#00ffc3);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.glow-r{background:linear-gradient(135deg,var(--red),#ff6680);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.glow-a{background:linear-gradient(135deg,var(--amber),#fcd34d);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.glow-p{background:linear-gradient(135deg,var(--purple),#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+/* MINI CHART */
+canvas.mini{width:100%!important;height:48px!important}
+
+/* ACTIVE LIVE PILL */
+.live-pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:20px;background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.15);font-family:'DM Mono',monospace;font-size:.58rem;color:var(--emerald)}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--emerald);animation:pulse-d 1s infinite;box-shadow:0 0 6px var(--emerald)}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:.5rem 0}
+
+/* SCROLLBAR in content */
+.content::-webkit-scrollbar{width:3px}
+.content::-webkit-scrollbar-thumb{background:rgba(61,127,255,.2)}
+
+/* RESPONSIVE */
+@media(max-width:1200px){.c3{grid-column:span 4}.c4{grid-column:span 6}.c7{grid-column:span 8}.c5{grid-column:span 6}}
+@media(max-width:900px){.c3{grid-column:span 6}.c4{grid-column:span 6}.c5{grid-column:span 12}.c6{grid-column:span 12}.c7{grid-column:span 12}.c8{grid-column:span 12}}
+</style>
+</head>
+<body>
+
+<!-- PRELOADER -->
+<div id="preloader">
+  <div class="scan-line"></div>
+  <div class="pl-ring"><div class="pl-core"></div></div>
+  <div class="pl-title">AXIOM</div>
+  <div class="pl-sub">Revenue Intelligence System · v3.0</div>
+  <div class="pl-bar-wrap"><div class="pl-bar" id="plBar"></div></div>
+  <div class="pl-steps mono" id="plStep">Initializing revenue data streams…</div>
+</div>
+
+<!-- CURSOR GLOW -->
+<div id="cursor-glow"></div>
+
+<!-- BG CANVAS -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- TOAST -->
+<div id="toastWrap"></div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="s-head">
+      <div class="logo-row">
+        <div class="logo-gem" onclick="toggleSidebar()">
+          <div class="logo-gem-inner"></div>
+        </div>
+        <div class="logo-text">
+          <div class="logo-name">AXIOM</div>
+          <div class="logo-caption">Revenue OS · Enterprise</div>
+        </div>
+      </div>
+
+      <div class="s-section">Intelligence</div>
+      <div class="nav-item on" data-p="overview" onclick="goTo('overview',this)">
+        <span class="nav-icon">◈</span><span class="nav-text">AI Control Center</span>
+      </div>
+      <div class="nav-item" data-p="revenue" onclick="goTo('revenue',this)">
+        <span class="nav-icon">◉</span><span class="nav-text">Revenue Command</span>
+      </div>
+      <div class="nav-item" data-p="forecast" onclick="goTo('forecast',this)">
+        <span class="nav-icon">⟐</span><span class="nav-text">Predictive Forecast</span>
+      </div>
+
+      <div class="s-section">Sales</div>
+      <div class="nav-item" data-p="funnel" onclick="goTo('funnel',this)">
+        <span class="nav-icon">⬡</span><span class="nav-text">Funnel Intelligence</span>
+        <span class="nav-badge y">!!</span>
+      </div>
+      <div class="nav-item" data-p="reps" onclick="goTo('reps',this)">
+        <span class="nav-icon">⊕</span><span class="nav-text">Sales Rep Intel</span>
+      </div>
+      <div class="nav-item" data-p="regions" onclick="goTo('regions',this)">
+        <span class="nav-icon">◎</span><span class="nav-text">Regional Map</span>
+      </div>
+
+      <div class="s-section">Decision</div>
+      <div class="nav-item" data-p="risks" onclick="goTo('risks',this)">
+        <span class="nav-icon">⚠</span><span class="nav-text">Risks & Opportunities</span>
+        <span class="nav-badge">3</span>
+      </div>
+      <div class="nav-item" data-p="insights" onclick="goTo('insights',this)">
+        <span class="nav-icon">✦</span><span class="nav-text">AI Insights Engine</span>
+        <span class="nav-badge ai" style="background:rgba(139,92,246,.2);color:#a78bfa">AI</span>
+      </div>
+      <div class="nav-item" data-p="sim" onclick="goTo('sim',this)">
+        <span class="nav-icon">⟳</span><span class="nav-text">Scenario Lab</span>
+        <span class="nav-badge g">NEW</span>
+      </div>
+    </div>
+
+    <div class="s-foot">
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <div class="status-text">
+          <div class="st-label">Live Data Feed</div>
+          <div class="st-sub">CRM · ERP · Pipeline · 42 signals</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN WRAP -->
+  <div class="main-wrap">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="tb-title syne" id="tbTitle">AI Revenue Control Center</div>
+      <div class="tb-badge tb-ok"><span class="dp dg"></span> All Systems Nominal</div>
+      <div class="tb-badge tb-warn"><span class="dp da"></span> Q4 At Risk</div>
+      <div class="tb-sep"></div>
+      <div class="live-pill"><div class="live-dot"></div>LIVE</div>
+      <div class="top-clock mono" id="topClock">--:--:--</div>
+      <select class="sel" id="periodSel" onchange="onPeriodChange()">
+        <option value="month">This Month</option>
+        <option value="quarter">This Quarter</option>
+        <option value="year" selected>This Year</option>
+      </select>
+      <button class="tbtn ai" onclick="runAIInsights()">✦ AI Analyze</button>
+      <button class="tbtn acc" onclick="exportData()">↓ Export</button>
+      <div class="notif" onclick="toggleNotif()">
+        🔔
+        <div class="notif-d" id="notifCount">3</div>
+        <div class="notif-panel" id="notifPanel">
+          <div class="np-head">
+            <div class="np-title syne">Intelligence Alerts</div>
+            <button class="tbtn" style="font-size:.58rem;padding:3px 8px" onclick="markAllRead(event)">Mark all read</button>
+          </div>
+          <div class="np-item unread" onclick="npClick(this,'APAC pipeline declining — 18% below target','error')">
+            <div class="np-item-title">⚠ APAC Pipeline Anomaly</div>
+            <div class="np-item-body">Q4 APAC leads dropped 18% below target threshold</div>
+            <div class="np-item-time mono">2 min ago</div>
+          </div>
+          <div class="np-item unread" onclick="npClick(this,'Enterprise churn risk detected — 3 accounts','warn')">
+            <div class="np-item-title">⟐ Churn Risk Detected</div>
+            <div class="np-item-body">3 enterprise accounts flagged as high churn probability</div>
+            <div class="np-item-time mono">14 min ago</div>
+          </div>
+          <div class="np-item unread" onclick="npClick(this,'Upsell opportunity: 47 premium accounts ready','ok')">
+            <div class="np-item-title">✦ Upsell Opportunity</div>
+            <div class="np-item-body">47 premium accounts show high upsell probability signals</div>
+            <div class="np-item-time mono">1h ago</div>
+          </div>
+          <div class="np-item" onclick="npClick(this,'Monthly revenue target hit: $4.2M','ok')">
+            <div class="np-item-title">◉ Revenue Milestone</div>
+            <div class="np-item-body">Monthly revenue target achieved — 103% of goal</div>
+            <div class="np-item-time mono">3h ago</div>
+          </div>
+        </div>
+      </div>
+      <div class="avatar">AX</div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="content scroll-inner">
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- VIEW: OVERVIEW (AI Control Center)      -->
+      <!-- ═══════════════════════════════════════ -->
+      <div class="view on" id="v-overview">
+
+        <!-- KPI ROW -->
+        <div class="g12" style="margin-bottom:1rem">
+          <div class="c3 kpi-card" style="--kpi-color:var(--emerald)">
+            <div class="kpi-glow" style="background:var(--emerald)"></div>
+            <div class="kpi-label">Total Revenue YTD</div>
+            <div class="kpi-value glow-g" id="kpi-rev">$48.6M</div>
+            <div class="kpi-delta up">▲ 23.4% YoY</div>
+            <div class="kpi-tag">Target: $52M · 93.5% attained</div>
+            <canvas class="mini" id="spark1"></canvas>
+          </div>
+          <div class="c3 kpi-card" style="--kpi-color:var(--accent)">
+            <div class="kpi-glow" style="background:var(--accent)"></div>
+            <div class="kpi-label">MRR</div>
+            <div class="kpi-value glow-num">$4.2M</div>
+            <div class="kpi-delta up">▲ 8.1% MoM</div>
+            <div class="kpi-tag">ARR run rate: $50.4M</div>
+            <canvas class="mini" id="spark2"></canvas>
+          </div>
+          <div class="c3 kpi-card" style="--kpi-color:var(--purple)">
+            <div class="kpi-glow" style="background:var(--purple)"></div>
+            <div class="kpi-label">Pipeline Value</div>
+            <div class="kpi-value glow-p">$31.7M</div>
+            <div class="kpi-delta dn">▼ 4.2% vs last Q</div>
+            <div class="kpi-tag">Close probability: 67%</div>
+            <canvas class="mini" id="spark3"></canvas>
+          </div>
+          <div class="c3 kpi-card" style="--kpi-color:var(--amber)">
+            <div class="kpi-glow" style="background:var(--amber)"></div>
+            <div class="kpi-label">Win Rate</div>
+            <div class="kpi-value glow-a">38.4%</div>
+            <div class="kpi-delta up">▲ 2.1pp</div>
+            <div class="kpi-tag">Avg deal size: $74K · 428 deals</div>
+            <canvas class="mini" id="spark4"></canvas>
+          </div>
+        </div>
+
+        <!-- HERO CHART + AI PANEL -->
+        <div class="g12" style="margin-bottom:1rem">
+          <div class="c8 card">
+            <div class="card-head">
+              <div>
+                <div class="card-title syne">Revenue Trajectory & Forecast</div>
+                <div class="card-sub mono">Live growth curve · AI anomaly overlay · 90-day forecast</div>
+              </div>
+              <div style="display:flex;gap:.5rem;align-items:center">
+                <span class="badge ai">✦ AI Active</span>
+                <span class="badge ok">Confidence: 87%</span>
+              </div>
+            </div>
+            <div class="card-body" style="padding-top:.8rem">
+              <div class="hero-chart-wrap">
+                <div class="hero-overlay"></div>
+                <canvas id="heroChart"></canvas>
+              </div>
+              <div style="display:flex;gap:1.5rem;margin-top:.8rem">
+                <div style="display:flex;align-items:center;gap:5px"><div style="width:12px;height:2px;background:var(--accent);border-radius:2px"></div><span style="font-size:.62rem;color:var(--text2)">Actual</span></div>
+                <div style="display:flex;align-items:center;gap:5px"><div style="width:12px;height:2px;background:var(--emerald);border-radius:2px;border-style:dashed;border-width:0 0 2px;border-color:var(--emerald)"></div><span style="font-size:.62rem;color:var(--text2)">Forecast</span></div>
+                <div style="display:flex;align-items:center;gap:5px"><div style="width:12px;height:12px;background:rgba(255,51,85,.3);border-radius:2px"></div><span style="font-size:.62rem;color:var(--text2)">Anomaly Zone</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="c4 card">
+            <div class="card-head">
+              <div>
+                <div class="card-title syne">AI Pulse Monitor</div>
+                <div class="card-sub mono">Real-time signal analysis</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="margin-bottom:1rem">
+                <div style="font-size:.62rem;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;font-family:'DM Mono',monospace;margin-bottom:.4rem">Forecast Confidence</div>
+                <div style="font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800" class="glow-g">87.3%</div>
+                <div style="height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:.4rem;overflow:hidden">
+                  <div style="width:87.3%;height:100%;background:linear-gradient(90deg,var(--emerald),#00c48c);border-radius:2px"></div>
+                </div>
+              </div>
+              <div class="divider"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.8rem">
+                <div style="text-align:center;padding:.5rem;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--border)">
+                  <div style="font-size:.58rem;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;font-family:'DM Mono',monospace">Anomalies</div>
+                  <div style="font-size:1.3rem;font-weight:800;font-family:'Syne',sans-serif" class="glow-r">2</div>
+                </div>
+                <div style="text-align:center;padding:.5rem;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--border)">
+                  <div style="font-size:.58rem;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;font-family:'DM Mono',monospace">Signals</div>
+                  <div style="font-size:1.3rem;font-weight:800;font-family:'Syne',sans-serif" class="glow-g">47</div>
+                </div>
+                <div style="text-align:center;padding:.5rem;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--border)">
+                  <div style="font-size:.58rem;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;font-family:'DM Mono',monospace">Velocity</div>
+                  <div style="font-size:1.3rem;font-weight:800;font-family:'Syne',sans-serif" class="glow-a">↑ 2.1×</div>
+                </div>
+                <div style="text-align:center;padding:.5rem;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid var(--border)">
+                  <div style="font-size:.58rem;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;font-family:'DM Mono',monospace">NRR</div>
+                  <div style="font-size:1.3rem;font-weight:800;font-family:'Syne',sans-serif" class="glow-g">118%</div>
+                </div>
+              </div>
+              <div class="divider" style="margin-top:.8rem"></div>
+              <canvas id="pulseChart" style="width:100%;height:70px;margin-top:.6rem"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM ROW -->
+        <div class="g12">
+          <div class="c4 card">
+            <div class="card-head">
+              <div class="card-title syne">Revenue by Segment</div>
+              <span class="badge info">Q4 2024</span>
+            </div>
+            <div class="card-body" style="padding-top:.7rem">
+              <canvas id="segmentChart" style="height:180px"></canvas>
+            </div>
+          </div>
+          <div class="c4 card">
+            <div class="card-head">
+              <div class="card-title syne">Top Products</div>
+              <span class="badge ok">By Revenue</span>
+            </div>
+            <div class="card-body">
+              <div class="prod-row">
+                <div style="width:8px;height:8px;border-radius:2px;background:var(--accent);flex-shrink:0"></div>
+                <div class="prod-name">AXIOM Enterprise Suite</div>
+                <div class="prod-rev">$18.4M</div>
+                <div class="prod-bar-wrap"><div class="prod-bar" style="width:100%;background:var(--accent)"></div></div>
+                <div class="prod-pct">37.9%</div>
+              </div>
+              <div class="prod-row">
+                <div style="width:8px;height:8px;border-radius:2px;background:var(--emerald);flex-shrink:0"></div>
+                <div class="prod-name">Analytics Platform</div>
+                <div class="prod-rev">$11.2M</div>
+                <div class="prod-bar-wrap"><div class="prod-bar" style="width:60%;background:var(--emerald)"></div></div>
+                <div class="prod-pct">23.1%</div>
+              </div>
+              <div class="prod-row">
+                <div style="width:8px;height:8px;border-radius:2px;background:var(--purple);flex-shrink:0"></div>
+                <div class="prod-name">AI Intelligence Layer</div>
+                <div class="prod-rev">$9.7M</div>
+                <div class="prod-bar-wrap"><div class="prod-bar" style="width:52%;background:var(--purple)"></div></div>
+                <div class="prod-pct">20.0%</div>
+              </div>
+              <div class="prod-row">
+                <div style="width:8px;height:8px;border-radius:2px;background:var(--amber);flex-shrink:0"></div>
+                <div class="prod-name">SMB Cloud Starter</div>
+                <div class="prod-rev">$6.3M</div>
+                <div class="prod-bar-wrap"><div class="prod-bar" style="width:34%;background:var(--amber)"></div></div>
+                <div class="prod-pct">13.0%</div>
+              </div>
+              <div class="prod-row">
+                <div style="width:8px;height:8px;border-radius:2px;background:var(--cyan);flex-shrink:0"></div>
+                <div class="prod-name">Professional Services</div>
+                <div class="prod-rev">$3.0M</div>
+                <div class="prod-bar-wrap"><div class="prod-bar" style="width:16%;background:var(--cyan)"></div></div>
+                <div class="prod-pct">6.0%</div>
+              </div>
+            </div>
+          </div>
+          <div class="c4 card">
+            <div class="card-head">
+              <div class="card-title syne">Active Risk Signals</div>
+              <span class="badge err">3 Critical</span>
+            </div>
+            <div class="card-body">
+              <div class="risk-card crit">
+                <div class="risk-icon">🔴</div>
+                <div class="risk-body">
+                  <div class="risk-title">APAC Pipeline Contraction</div>
+                  <div class="risk-desc">Lead conversion dropped 18% — 3 consecutive weeks</div>
+                </div>
+                <span class="risk-tag" style="background:rgba(255,51,85,.15);color:var(--red)">CRIT</span>
+              </div>
+              <div class="risk-card warn">
+                <div class="risk-icon">🟡</div>
+                <div class="risk-body">
+                  <div class="risk-title">Q4 Forecast Gap</div>
+                  <div class="risk-desc">$3.4M shortfall projected at current velocity</div>
+                </div>
+                <span class="risk-tag" style="background:rgba(245,158,11,.15);color:var(--amber)">WARN</span>
+              </div>
+              <div class="risk-card opp">
+                <div class="risk-icon">🟢</div>
+                <div class="risk-body">
+                  <div class="risk-title">Upsell Opportunity</div>
+                  <div class="risk-desc">47 premium accounts ready — $2.1M potential</div>
+                </div>
+                <span class="risk-tag" style="background:rgba(0,229,160,.15);color:var(--emerald)">OPP</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /overview -->
+
+
+      <!-- ═══════════════════════════ -->
+      <!-- VIEW: REVENUE COMMAND       -->
+      <!-- ═══════════════════════════ -->
+      <div class="view" id="v-revenue">
+        <div class="section-hd">
+          <div class="section-title syne">Revenue Command Center</div>
+          <div class="section-meta mono">Full financial intelligence · Updated live</div>
+        </div>
+        <div class="g12" style="margin-bottom:1rem">
+          <div class="c3 kpi-card" style="--kpi-color:var(--emerald)">
+            <div class="kpi-glow" style="background:var(--emerald)"></div>
+            <div class="kpi-label">Total Revenue YTD</div>
+            <div class="kpi-value glow-g">$48.6M</div>
+            <div class="kpi-delta up">▲ 23.4% YoY</div>
+          </div>
+          <div class="c3 kpi-card" style="--kpi-color:var(--accent)">
+            <div class="kpi-glow" style="background:var(--accent)"></div>
+            <div class="kpi-label">MRR</div>
+            <div class="kpi-value glow-num">$4.2M</div>
+            <div class="kpi-delta up">▲ 8.1% MoM</div>
+          </div>
+          <div class="c3 kpi-card" style="--kpi-color:var(--cyan)">
+            <div class="kpi-glow" style="background:var(--cyan)"></div>
+            <div class="kpi-label">ARR</div>
+            <div class="kpi-value" style="color:var(--cyan)">$50.4M</div>
+            <div class="kpi-delta up">▲ 31.2% YoY</div>
+          </div>
+          <div class="c3 kpi-card" style="--kpi-color:var(--amber)">
+            <div class="kpi-glow" style="background:var(--amber)"></div>
+            <div class="kpi-label">QoQ Growth</div>
+            <div class="kpi-value glow-a">+14.7%</div>
+            <div class="kpi-delta ne">◈ Tracking target</div>
+          </div>
+        </div>
+        <div class="g12">
+          <div class="c8 card">
+            <div class="card-head">
+              <div class="card-title syne">Monthly Revenue Breakdown</div>
+              <span class="badge ok">FY 2024</span>
+            </div>
+            <div class="card-body"><canvas id="revChart" style="height:260px"></canvas></div>
+          </div>
+          <div class="c4 card">
+            <div class="card-head">
+              <div class="card-title syne">Revenue Mix</div>
+              <span class="badge info">By Type</span>
+            </div>
+            <div class="card-body"><canvas id="mixChart" style="height:220px"></canvas>
+              <div style="margin-top:.8rem;display:flex;flex-direction:column;gap:.3rem">
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:.68rem"><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;background:var(--accent);border-radius:2px;display:inline-block"></span>New Business</span><span class="mono" style="color:var(--text2)">$22.1M · 45%</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:.68rem"><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;background:var(--emerald);border-radius:2px;display:inline-block"></span>Expansion</span><span class="mono" style="color:var(--text2)">$14.6M · 30%</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:.68rem"><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;background:var(--purple);border-radius:2px;display:inline-block"></span>Renewal</span><span class="mono" style="color:var(--text2)">$9.7M · 20%</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:.68rem"><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;background:var(--amber);border-radius:2px;display:inline-block"></span>Services</span><span class="mono" style="color:var(--text2)">$2.4M · 5%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════ -->
+      <!-- VIEW: FORECAST              -->
+      <!-- ═══════════════════════════ -->
+      <div class="view" id="v-forecast">
+        <div class="section-hd">
+          <div class="section-title syne">Predictive Forecast Engine</div>
+          <div class="section-meta mono">ML-powered · Confidence intervals · Seasonal model</div>
+        </div>
+        <div class="g12">
+          <div class="c8 card">
+            <div class="card-head">
+              <div class="card-title syne">90-Day Revenue Forecast</div>
+              <span class="badge ai">✦ AI Powered</span>
+            </div>
+            <div class="card-body"><canvas id="forecastChart" style="height:280px"></canvas></div>
+          </div>
+          <div class="c4">
+            <div class="forecast-stat card" style="margin-bottom:.8rem">
+              <div class="card-head"><div class="card-title syne">Next Month Prediction</div></div>
+              <div class="card-body">
+                <div style="font-family:'Syne',sans-serif;font-size:2.4rem;font-weight:800" class="glow-g">$5.1M</div>
+                <div style="font-size:.7rem;color:var(--text2);margin-top:.3rem">Confidence interval: $4.7M – $5.5M</div>
+                <div style="height:4px;background:rgba(255,255,255,.05);border-radius:2px;margin-top:.5rem;overflow:hidden;position:relative">
+                  <div style="position:absolute;left:20%;right:15%;top:0;bottom:0;background:rgba(0,229,160,.2);border-radius:2px"></div>
+                  <div style="position:absolute;left:45%;width:3px;top:-1px;bottom:-1px;background:var(--emerald);border-radius:2px;box-shadow:0 0 8px var(--emerald)"></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div class="card-title syne">Forecast Stats</div></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:.5rem">
+                <div class="forecast-stat">
+                  <div class="forecast-stat-row">
+                    <div class="forecast-label">Q4 Projection</div>
+                    <div class="forecast-val glow-g">$14.8M</div>
+                  </div>
+                </div>
+                <div class="forecast-stat">
+                  <div class="forecast-stat-row">
+                    <div class="forecast-label">FY2024 Total Forecast</div>
+                    <div class="forecast-val glow-num">$57.2M</div>
+                  </div>
+                </div>
+                <div class="forecast-stat">
+                  <div class="forecast-stat-row">
+                    <div class="forecast-label">Probability-Weighted</div>
+                    <div class="forecast-val glow-a">$53.8M</div>
+                  </div>
+                </div>
+                <div class="forecast-stat">
+                  <div class="forecast-stat-row">
+                    <div class="forecast-label">Model Accuracy (90d)</div>
+                    <div class="forecast-val glow-g">94.1%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════ -->
+      <!-- VIEW: FUNNEL                -->
+      <!-- ═══════════════════════════ -->
+      <div class="view" id="v-funnel">
+        <div class="section-hd">
+          <div class="section-title syne">Sales Funnel Intelligence</div>
+          <div class="section-meta mono">Conversion tracking · Bottleneck detection · Velocity analysis</div>
+        </div>
+        <div class="g12">
+          <div class="c6 card">
+            <div class="card-head">
+              <div class="card-title syne">Pipeline Funnel</div>
+              <span class="badge warn">Bottleneck: Proposal→Negotiation</span>
+            </div>
+            <div class="card-body" id="funnelBody">
+              <div class="funnel-stage">
+                <div class="funnel-label" style="color:var(--accent)">Leads</div>
+                <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:100%;background:var(--accent)"></div></div>
+                <div class="funnel-count mono">4,820</div>
+                <div class="funnel-pct mono" style="color:var(--accent)">100%</div>
+              </div>
+              <div class="funnel-stage">
+                <div class="funnel-label" style="color:var(--cyan)">Qualified</div>
+                <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:62%;background:var(--cyan)"></div></div>
+                <div class="funnel-count mono">2,990</div>
+                <div class="funnel-pct mono" style="color:var(--cyan)">62.0%</div>
+              </div>
+              <div class="funnel-stage">
+                <div class="funnel-label" style="color:var(--purple)">Proposal</div>
+                <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:38%;background:var(--purple)"></div></div>
+                <div class="funnel-count mono">1,832</div>
+                <div class="funnel-pct mono" style="color:var(--purple)">38.0%</div>
+              </div>
+              <div class="funnel-stage" style="background:rgba(255,51,85,.04);border-color:rgba(255,51,85,.2)">
+                <div class="funnel-label" style="color:var(--red)">Negotiation ⚠</div>
+                <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:14%;background:var(--red)"></div></div>
+                <div class="funnel-count mono">675</div>
+                <div class="funnel-pct mono" style="color:var(--red)">14.0%</div>
+              </div>
+              <div class="funnel-stage">
+                <div class="funnel-label" style="color:var(--emerald)">Closed Won</div>
+                <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:8%;background:var(--emerald)"></div></div>
+                <div class="funnel-count mono">428</div>
+                <div class="funnel-pct mono" style="color:var(--emerald)">8.9%</div>
+              </div>
+            </div>
+          </div>
+          <div class="c6 card">
+            <div class="card-head">
+              <div class="card-title syne">Conversion Analytics</div>
+            </div>
+            <div class="card-body"><canvas id="funnelChart" style="height:260px"></canvas></div>
+          </div>
+          <div class="c12 card" style="margin-top:0">
+            <div class="card-head">
+              <div class="card-title syne">AI Bottleneck Analysis</div>
+              <span class="badge ai">✦ AI Insight</span>
+            </div>
+            <div class="card-body" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem">
+              <div class="ai-card">
+                <div class="ai-card-head"><span class="badge err">Critical</span><div class="ai-card-title">Proposal → Negotiation Drop-off</div></div>
+                <div class="ai-card-body">63% of proposals stall at negotiation. Avg stall time: 18 days. Primary cause: pricing objections. Recommend pre-built objection handling playbook deployment.</div>
+                <div class="ai-card-footer"><div class="conf-bar-wrap"><div class="conf-bar" style="width:91%"></div></div><div class="conf-label">91% confidence</div></div>
+              </div>
+              <div class="ai-card">
+                <div class="ai-card-head"><span class="badge warn">Warning</span><div class="ai-card-title">APAC Lead Quality Decline</div></div>
+                <div class="ai-card-body">APAC qualified leads dropped from 68% → 52% conversion in 3 weeks. Channel attribution shows paid leads underperforming organic by 3.2×.</div>
+                <div class="ai-card-footer"><div class="conf-bar-wrap"><div class="conf-bar" style="width:84%"></div></div><div class="conf-label">84% confidence</div></div>
+              </div>
+              <div class="ai-card">
+                <div class="ai-card-head"><span class="badge ok">Opportunity</span><div class="ai-card-title">Velocity Acceleration Signal</div></div>
+                <div class="ai-card-body">Enterprise deals with demo-first sequence close 2.4× faster. Applying this to 120 qualified leads in pipeline could unlock $8.4M in 45 days.</div>
+                <div class="ai-card-footer"><div class="conf-bar-wrap"><div class="conf-bar" style="width:78%"></div></div><div class="conf-label">78% confidence</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════ -->
+      <!-- VIEW: REPS                  -->
+      <!-- ═══════════════════════════ -->
+      <div class="view" id="v-reps">
+        <div class="section-hd">
+          <div class="section-title syne">Sales Rep Intelligence</div>
+          <div class="section-meta mono">Performance · Quota · Productivity · Pipeline</div>
+        </div>
+        <div class="g12">
+          <div class="c6 card">
+            <div class="card-head">
+              <div class="card-title syne">Rep Leaderboard</div>
+              <span class="badge ok">Q4 2024</span>
+            </div>
+            <div class="card-body">
+              <div class="rep-row">
+                <div class="rep-rank">1</div>
+                <div class="rep-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706)">JS</div>
+                <div class="rep-name">Jordan Smith <span style="font-size:.6rem;color:var(--emerald);margin-left:4px">👑 Top</span></div>
+                <div class="rep-metric">$4.2M</div>
+                <div class="rep-bar-wrap"><div class="rep-bar" style="width:100%;background:var(--amber)"></div></div>
+                <span class="badge ok">142%</span>
+              </div>
+              <div class="rep-row">
+                <div class="rep-rank">2</div>
+                <div class="rep-avatar" style="background:linear-gradient(135deg,#3d7fff,#1a4fd8)">MK</div>
+                <div class="rep-name">Maya Kim</div>
+                <div class="rep-metric">$3.8M</div>
+                <div class="rep-bar-wrap"><div class="rep-bar" style="width:90%;background:var(--accent)"></div></div>
+                <span class="badge ok">128%</span>
+              </div>
+              <div class="rep-row">
+                <div class="rep-rank">3</div>
+                <div class="rep-avatar" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">AC</div>
+                <div class="rep-name">Alex Chen</div>
+                <div class="rep-metric">$3.1M</div>
+                <div class="rep-bar-wrap"><div class="rep-bar" style="width:74%;background:var(--purple)"></div></div>
+                <span class="badge ok">104%</span>
+              </div>
+              <div class="rep-row">
+                <div class="rep-rank">4</div>
+                <div class="rep-avatar" style="background:linear-gradient(135deg,#06b6d4,#0891b2)">RL</div>
+                <div class="rep-name">Ryan Lopez</div>
+                <div class="rep-metric">$2.4M</div>
+                <div class="rep-bar-wrap"><div class="rep-bar" style="width:57%;background:var(--cyan)"></div></div>
+                <span class="badge warn">81%</span>
+              </div>
+              <div class="rep-row">
+                <div class="rep-rank">5</div>
+                <div class="rep-avatar" style="background:linear-gradient(135deg,#00e5a0,#059669)">SP</div>
+                <div class="rep-name">Sarah Park</div>
+                <div class="rep-metric">$2.2M</div>
+                <div class="rep-bar-wrap"><div class="rep-bar" style="width:52%;background:var(--emerald)"></div></div>
+                <span class="badge warn">74%</span>
+              </div>
+              <div class="rep-row">
+                <div class="rep-rank">6</div>
+                <div class="rep-avatar" style="background:linear-gradient(135deg,#ff3355,#be123c)">TW</div>
+                <div class="rep-name">Tom Walsh</div>
+                <div class="rep-metric">$1.4M</div>
+                <div class="rep-bar-wrap"><div class="rep-bar" style="width:33%;background:var(--red)"></div></div>
+                <span class="badge err">47%</span>
+              </div>
+            </div>
+          </div>
+          <div class="c6 card">
+            <div class="card-head">
+              <div class="card-title syne">Performance Radar</div>
+              <span class="badge info">Jordan Smith</span>
+            </div>
+            <div class="card-body"><canvas id="radarChart" style="height:280px"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════ -->
+      <!-- VIEW: REGIONS               -->
+      <!-- ═══════════════════════════ -->
+      <div class="view" id="v-regions">
+        <div class="section-hd">
+          <div class="section-title syne">Regional Revenue Intelligence</div>
+          <div class="section-meta mono">Demand intensity · Growth hotspots · Risk zones</div>
+        </div>
+        <div class="g12">
+          <div class="c8 card">
+            <div class="card-head">
+              <div class="card-title syne">Global Revenue Heat Map</div>
+              <span class="badge ai">AI Regional Analysis Active</span>
+            </div>
+            <div class="card-body">
+              <div class="map-wrap">
+                <div class="map-grid"></div>
+                <!-- Region Bubbles -->
+                <div class="region-bubble" style="width:90px;height:90px;top:25%;left:18%;background:radial-gradient(circle,rgba(61,127,255,.4),rgba(61,127,255,.1));border-color:rgba(61,127,255,.4)" onclick="toast('North America: $18.4M · ▲ 28%','ok')">
+                  <div class="rb-val" style="color:var(--accent)">$18.4M</div>
+                  <div class="rb-label">N. America<br>▲ 28%</div>
+                </div>
+                <div class="region-bubble" style="width:75px;height:75px;top:22%;left:44%;background:radial-gradient(circle,rgba(0,229,160,.35),rgba(0,229,160,.08));border-color:rgba(0,229,160,.4)" onclick="toast('Europe: $12.7M · ▲ 19%','ok')">
+                  <div class="rb-val" style="color:var(--emerald)">$12.7M</div>
+                  <div class="rb-label">Europe<br>▲ 19%</div>
+                </div>
+                <div class="region-bubble" style="width:65px;height:65px;top:35%;left:68%;background:radial-gradient(circle,rgba(255,51,85,.3),rgba(255,51,85,.07));border-color:rgba(255,51,85,.35)" onclick="toast('APAC: $9.2M · ▼ 12% RISK','error')">
+                  <div class="rb-val" style="color:var(--red)">$9.2M</div>
+                  <div class="rb-label">APAC<br>▼ 12%</div>
+                </div>
+                <div class="region-bubble" style="width:50px;height:50px;top:52%;left:27%;background:radial-gradient(circle,rgba(245,158,11,.3),rgba(245,158,11,.07));border-color:rgba(245,158,11,.35)" onclick="toast('LATAM: $5.8M · ▲ 34%','ok')">
+                  <div class="rb-val" style="color:var(--amber)">$5.8M</div>
+                  <div class="rb-label">LATAM<br>▲ 34%</div>
+                </div>
+                <div class="region-bubble" style="width:42px;height:42px;top:45%;left:50%;background:radial-gradient(circle,rgba(139,92,246,.3),rgba(139,92,246,.07));border-color:rgba(139,92,246,.35)" onclick="toast('MEA: $2.5M · ▲ 41% Emerging','ok')">
+                  <div class="rb-val" style="color:var(--purple);font-size:.55rem">$2.5M</div>
+                  <div class="rb-label">MEA<br>▲ 41%</div>
+                </div>
+                <!-- Decorative lines -->
+                <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.2">
+                  <line x1="23%" y1="30%" x2="46%" y2="27%" stroke="rgba(61,127,255,.5)" stroke-width="1" stroke-dasharray="4,4"/>
+                  <line x1="47%" y1="27%" x2="71%" y2="37%" stroke="rgba(61,127,255,.3)" stroke-width="1" stroke-dasharray="4,4"/>
+                </svg>
+              </div>
+              <div style="display:flex;gap:.5rem;margin-top:.8rem;flex-wrap:wrap">
+                <span class="badge ok"><span class="dp dg"></span> Growth Hotspot</span>
+                <span class="badge err"><span class="dp dr"></span> Risk Zone</span>
+                <span class="badge warn"><span class="dp da"></span> Emerging</span>
+                <span style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text2);margin-left:auto">Click bubbles for detail</span>
+              </div>
+            </div>
+          </div>
+          <div class="c4 card">
+            <div class="card-head"><div class="card-title syne">Regional Breakdown</div></div>
+            <div class="card-body"><canvas id="regionChart" style="height:220px"></canvas>
+              <div class="divider" style="margin-top:.8rem"></div>
+              <div style="margin-top:.8rem">
+                <div class="ai-card" style="padding:.7rem;margin-bottom:.5rem">
+                  <div class="ai-card-head"><span class="badge err">Alert</span><div class="ai-card-title">APAC Requires Intervention</div></div>
+                  <div class="ai-card-body">Lead conversion in APAC dropped 18%. Recommend territory review + headcount redeployment from US Mid-Market.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════ -->
+      <!-- VIEW: RISKS                 -->
+      <!-- ═══════════════════════════ -->
+      <div class="view" id="v-risks">
+        <div class="section-hd">
+          <div class="section-title syne">Opportunity & Risk Detection</div>
+          <div class="section-meta mono">AI-powered · Real-time · Actionable intelligence</div>
+        </div>
+        <div class="g12">
+          <div class="c6">
+            <div class="card" style="margin-bottom:1rem">
+              <div class="card-head"><div class="card-title syne" style="color:var(--red)">⚠ Critical Alerts</div><span class="badge err">2 Active</span></div>
+              <div class="card-body">
+                <div class="risk-card crit"><div class="risk-icon">🔴</div><div class="risk-body"><div class="risk-title">APAC Pipeline Contraction</div><div class="risk-desc">18% decline in lead conversion. 3 enterprise accounts at risk. Estimated impact: -$2.8M Q4 revenue.</div></div><span class="risk-tag" style="background:rgba(255,51,85,.15);color:var(--red)">HIGH</span></div>
+                <div class="risk-card crit"><div class="risk-icon">🔴</div><div class="risk-body"><div class="risk-title">Churn Risk: 3 Enterprise Accounts</div><div class="risk-desc">Accounts flagged by AI: Apex Corp, DataBridge Inc, NovaTech. Combined ARR: $1.4M. NPS trending negative.</div></div><span class="risk-tag" style="background:rgba(255,51,85,.15);color:var(--red)">CRIT</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div class="card-title syne" style="color:var(--amber)">◈ Warnings</div><span class="badge warn">3 Active</span></div>
+              <div class="card-body">
+                <div class="risk-card warn"><div class="risk-icon">🟡</div><div class="risk-body"><div class="risk-title">Q4 Forecast Gap</div><div class="risk-desc">At current velocity, Q4 closes at $11.4M vs $14.8M target — $3.4M gap. 22-day warning window.</div></div></div>
+                <div class="risk-card warn"><div class="risk-icon">🟡</div><div class="risk-body"><div class="risk-title">Proposal Stall Rate Rising</div><div class="risk-desc">Avg proposal stall time increased from 12d → 18d. 63 deals in negotiation limbo.</div></div></div>
+                <div class="risk-card warn"><div class="risk-icon">🟡</div><div class="risk-body"><div class="risk-title">Mid-Market Segment Softening</div><div class="risk-desc">New logo acquisition in $50K-$200K tier down 14% QoQ. Competitive pressure from two new entrants.</div></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="c6">
+            <div class="card">
+              <div class="card-head"><div class="card-title syne" style="color:var(--emerald)">✦ Opportunities</div><span class="badge ok">4 High Priority</span></div>
+              <div class="card-body">
+                <div class="risk-card opp"><div class="risk-icon">🟢</div><div class="risk-body"><div class="risk-title">Upsell: 47 Premium Accounts</div><div class="risk-desc">AI detected expansion signals in 47 accounts. AI layer upsell potential: $2.1M. Recommended: personalized outreach campaign.</div></div><span class="risk-tag" style="background:rgba(0,229,160,.15);color:var(--emerald)">$2.1M</span></div>
+                <div class="risk-card opp"><div class="risk-icon">🟢</div><div class="risk-body"><div class="risk-title">LATAM Demand Surge</div><div class="risk-desc">LATAM inbound leads up 34% with no headcount investment. High ROI opportunity with current traffic.</div></div><span class="risk-tag" style="background:rgba(0,229,160,.15);color:var(--emerald)">HOT</span></div>
+                <div class="risk-card opp"><div class="risk-icon">🟢</div><div class="risk-body"><div class="risk-title">Demo-First Velocity Multiplier</div><div class="risk-desc">120 qualified leads could close 2.4× faster with demo-first sequence. Projected unlock: $8.4M in 45 days.</div></div><span class="risk-tag" style="background:rgba(0,229,160,.15);color:var(--emerald)">$8.4M</span></div>
+                <div class="risk-card opp"><div class="risk-icon">🟢</div><div class="risk-body"><div class="risk-title">Annual Contract Conversion</div><div class="risk-desc">214 monthly accounts eligible for annual conversion. 20% discount offer could lock $4.2M ARR.</div></div><span class="risk-tag" style="background:rgba(0,229,160,.15);color:var(--emerald)">$4.2M</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════ -->
+      <!-- VIEW: AI INSIGHTS           -->
+      <!-- ═══════════════════════════ -->
+      <div class="view" id="v-insights">
+        <div class="section-hd">
+          <div class="section-title syne">AI Revenue Insights Engine</div>
+          <div class="section-meta mono">Neural analysis · Explainable AI · Confidence-weighted</div>
+        </div>
+        <div class="g12">
+          <div class="c8">
+            <div class="card" style="margin-bottom:1rem">
+              <div class="card-head">
+                <div>
+                  <div class="card-title syne">Executive Neural Report</div>
+                  <div class="card-sub mono">Last analyzed: <span id="aiTime">–</span></div>
+                </div>
+                <button class="tbtn ai" onclick="runAIInsights()">✦ Re-analyze</button>
+              </div>
+              <div class="card-body" id="aiBox">
+                <div style="text-align:center;padding:2rem;color:var(--text2)">
+                  <div style="font-size:2rem;margin-bottom:.5rem">✦</div>
+                  <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.3rem">AI Analysis Ready</div>
+                  <div style="font-size:.72rem">Click "AI Analyze" to generate executive insights</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="c4">
+            <div class="card">
+              <div class="card-head"><div class="card-title syne">Signal Feed</div><span class="live-pill"><div class="live-dot"></div>Live</span></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:.5rem">
+                <div class="ai-card" style="padding:.6rem .7rem">
+                  <div class="ai-card-head"><span class="badge ok" style="font-size:.5rem">+$2.1M</span><div class="ai-card-title" style="font-size:.68rem">Upsell momentum detected</div></div>
+                  <div class="ai-card-body" style="font-size:.63rem">47 premium accounts showing expansion signals after product launch</div>
+                </div>
+                <div class="ai-card" style="padding:.6rem .7rem">
+                  <div class="ai-card-head"><span class="badge err" style="font-size:.5rem">-12%</span><div class="ai-card-title" style="font-size:.68rem">APAC conversion decline</div></div>
+                  <div class="ai-card-body" style="font-size:.63rem">Enterprise revenue declined in APAC due to reduced lead conversion efficiency</div>
+                </div>
+                <div class="ai-card" style="padding:.6rem .7rem">
+                  <div class="ai-card-head"><span class="badge ok" style="font-size:.5rem">+8.3%</span><div class="ai-card-title" style="font-size:.68rem">Pricing optimization gain</div></div>
+                  <div class="ai-card-body" style="font-size:.63rem">Conversion efficiency improved 8.3% after Q3 pricing model update</div>
+                </div>
+                <div class="ai-card" style="padding:.6rem .7rem">
+                  <div class="ai-card-head"><span class="badge warn" style="font-size:.5rem">RISK</span><div class="ai-card-title" style="font-size:.68rem">Churn probability rising</div></div>
+                  <div class="ai-card-body" style="font-size:.63rem">3 accounts flagged with 70%+ churn probability — immediate CS outreach advised</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════ -->
+      <!-- VIEW: SCENARIO LAB          -->
+      <!-- ═══════════════════════════ -->
+      <div class="view" id="v-sim">
+        <div class="section-hd">
+          <div class="section-title syne">Scenario Simulation Lab</div>
+          <div class="section-meta mono">Elite feature · Dynamic recalculation · AI recommendation</div>
+        </div>
+        <div class="g12">
+          <div class="c5 card">
+            <div class="card-head">
+              <div class="card-title syne">Simulation Controls</div>
+              <span class="badge ai">✦ AI Powered</span>
+            </div>
+            <div class="card-body">
+              <div class="sim-slider-wrap">
+                <div class="sim-label"><div class="sim-name">Marketing Spend Multiplier</div><div class="sim-val" id="v-mkt">1.0×</div></div>
+                <input type="range" min="0.5" max="3" step="0.1" value="1" oninput="updateSim('mkt',this.value)">
+              </div>
+              <div class="sim-slider-wrap">
+                <div class="sim-label"><div class="sim-name">Churn Rate Reduction</div><div class="sim-val" id="v-churn">0%</div></div>
+                <input type="range" min="-10" max="10" step="0.5" value="0" oninput="updateSim('churn',this.value)">
+              </div>
+              <div class="sim-slider-wrap">
+                <div class="sim-label"><div class="sim-name">Enterprise Pricing Change</div><div class="sim-val" id="v-price">0%</div></div>
+                <input type="range" min="-20" max="30" step="1" value="0" oninput="updateSim('price',this.value)">
+              </div>
+              <div class="sim-slider-wrap">
+                <div class="sim-label"><div class="sim-name">Sales Headcount Increase</div><div class="sim-val" id="v-hc">0</div></div>
+                <input type="range" min="0" max="20" step="1" value="0" oninput="updateSim('hc',this.value)">
+              </div>
+              <div class="sim-slider-wrap">
+                <div class="sim-label"><div class="sim-name">Win Rate Improvement</div><div class="sim-val" id="v-win">0%</div></div>
+                <input type="range" min="-10" max="20" step="0.5" value="0" oninput="updateSim('win',this.value)">
+              </div>
+              <button class="tbtn acc" style="width:100%;margin-top:.5rem;justify-content:center" onclick="resetSim()">↺ Reset All</button>
+            </div>
+          </div>
+
+          <div class="c7">
+            <div class="card" style="margin-bottom:1rem">
+              <div class="card-head">
+                <div class="card-title syne">Projected Impact</div>
+                <span class="badge ai" id="simChangeBadge">Baseline</span>
+              </div>
+              <div class="card-body">
+                <div class="sim-out-grid">
+                  <div class="sim-out-item"><div class="sim-out-label">Revenue Projection</div><div class="sim-out-val pos" id="sim-rev">$48.6M</div></div>
+                  <div class="sim-out-item"><div class="sim-out-label">ARR Impact</div><div class="sim-out-val pos" id="sim-arr">$50.4M</div></div>
+                  <div class="sim-out-item"><div class="sim-out-label">Lead Growth</div><div class="sim-out-val pos" id="sim-leads">4,820</div></div>
+                  <div class="sim-out-item"><div class="sim-out-label">CAC Change</div><div class="sim-out-val" id="sim-cac">$2,140</div></div>
+                  <div class="sim-out-item"><div class="sim-out-label">Gross Margin Est.</div><div class="sim-out-val pos" id="sim-margin">71.2%</div></div>
+                  <div class="sim-out-item"><div class="sim-out-label">Payback Period</div><div class="sim-out-val" id="sim-payback">14.2 mo</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div class="card-title syne">Scenario Projection Chart</div></div>
+              <div class="card-body"><canvas id="simChart" style="height:190px"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main-wrap -->
+</div><!-- /app -->
+
+<script>
+// ── GLOBALS ──
+const C = (id,t='2d') => { const c = document.getElementById(id); return c ? c.getContext(t) : null; };
+const qs = s => document.querySelector(s);
+const qsa = s => document.querySelectorAll(s);
+
+// ── PRELOADER ──
+(function preload(){
+  const bar = document.getElementById('plBar');
+  const step = document.getElementById('plStep');
+  const steps = [
+    'Initializing revenue intelligence modules…',
+    'Connecting CRM data streams…',
+    'Loading AI forecast engine…',
+    'Calibrating anomaly detection…',
+    'Aggregating pipeline signals…',
+    'Warming up neural analysis layer…',
+    'System ready — launching AXIOM…'
+  ];
+  let p=0, si=0;
+  const iv = setInterval(()=>{
+    p += Math.random()*4 + 1;
+    if(p>100) p=100;
+    bar.style.width = p+'%';
+    const ni = Math.floor(p/100*steps.length);
+    if(ni !== si && ni < steps.length){ si=ni; step.textContent=steps[si]; }
+    if(p>=100){
+      clearInterval(iv);
+      setTimeout(()=>{
+        document.getElementById('preloader').style.transition='opacity .5s';
+        document.getElementById('preloader').style.opacity='0';
+        setTimeout(()=>{
+          document.getElementById('preloader').style.display='none';
+          const app = document.getElementById('app');
+          app.style.transition='opacity .4s';
+          app.style.opacity='1';
+          initAll();
+        },500);
+      },300);
+    }
+  },50);
+})();
+
+// ── CLOCK ──
+function updateClock(){
+  document.getElementById('topClock').textContent = new Date().toLocaleTimeString('en-US',{hour12:false});
+}
+setInterval(updateClock,1000);
+updateClock();
+
+// ── CURSOR GLOW ──
+document.addEventListener('mousemove',e=>{
+  const g = document.getElementById('cursor-glow');
+  g.style.left = e.clientX+'px';
+  g.style.top = e.clientY+'px';
+});
+
+// ── BG CANVAS (particle field) ──
+(function bgAnim(){
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const pts = Array.from({length:80},()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:Math.random()*1.5+.5}));
+  function frame(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pts.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0)p.x=canvas.width; if(p.x>canvas.width)p.x=0;
+      if(p.y<0)p.y=canvas.height; if(p.y>canvas.height)p.y=0;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle='rgba(61,127,255,0.2)';
+      ctx.fill();
+    });
+    pts.forEach((a,i)=>{
+      pts.slice(i+1).forEach(b=>{
+        const d=Math.hypot(a.x-b.x,a.y-b.y);
+        if(d<120){
+          ctx.beginPath();
+          ctx.moveTo(a.x,a.y);
+          ctx.lineTo(b.x,b.y);
+          ctx.strokeStyle=`rgba(61,127,255,${.06*(1-d/120)})`;
+          ctx.lineWidth=.5;
+          ctx.stroke();
+        }
+      });
+    });
+    requestAnimationFrame(frame);
+  }
+  frame();
+  window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
+})();
+
+// ── CHART DEFAULTS ──
+Chart.defaults.color = '#5a6a8a';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 10;
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const rev = [2.1,2.4,2.8,3.0,3.3,3.6,3.9,4.0,4.1,4.2,null,null];
+const forecast = [null,null,null,null,null,null,null,null,null,4.2,4.6,5.1];
+
+function initAll(){
+  initSparklines();
+  initHeroChart();
+  initPulseChart();
+  initSegmentChart();
+  initRevChart();
+  initMixChart();
+  initForecastChart();
+  initFunnelChart();
+  initRadarChart();
+  initRegionChart();
+  initSimChart();
+  toast('AXIOM Revenue Intelligence loaded ✓','ok');
+  setTimeout(()=>toast('3 active risk alerts require attention','error'),1200);
+  setTimeout(()=>toast('AI forecast confidence: 87.3%','info'),2000);
+}
+
+// SPARKLINES
+function initSparklines(){
+  const sparkData = [
+    [28,32,29,35,38,36,40,42,45,48],
+    [3.1,3.3,3.5,3.6,3.8,3.7,3.9,4.0,4.1,4.2],
+    [29,31,33,30,32,34,33,31,30,31.7],
+    [35,36,37,36,37,38,38,37,38,38.4]
+  ];
+  const cols = ['rgba(0,229,160,','rgba(61,127,255,','rgba(139,92,246,','rgba(245,158,11,'];
+  [1,2,3,4].forEach((n,i)=>{
+    const ctx = C('spark'+n);
+    if(!ctx) return;
+    new Chart(ctx,{type:'line',data:{labels:sparkData[i],datasets:[{data:sparkData[i],borderColor:cols[i]+'1)',borderWidth:1.5,tension:.4,fill:true,backgroundColor:cols[i]+'.08)',pointRadius:0}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}},animation:{duration:1200}}});
+  });
+}
+
+// HERO CHART
+function initHeroChart(){
+  const ctx = C('heroChart');
+  if(!ctx) return;
+  const anomalyPlugin = {
+    id:'anomaly',
+    beforeDraw(chart){
+      const {ctx:c,chartArea:{top,bottom},scales:{x}} = chart;
+      const a1 = x.getPixelForValue(1), a2 = x.getPixelForValue(2);
+      c.save();
+      c.fillStyle='rgba(255,51,85,0.07)';
+      c.fillRect(a1,top,a2-a1,bottom-top);
+      c.restore();
+    }
+  };
+  new Chart(ctx,{
+    type:'line',
+    plugins:[anomalyPlugin],
+    data:{
+      labels:MONTHS,
+      datasets:[
+        {label:'Actual',data:rev,borderColor:'#3d7fff',borderWidth:2,tension:.4,fill:true,backgroundColor:'rgba(61,127,255,0.06)',pointRadius:3,pointBackgroundColor:'#3d7fff',pointBorderColor:'#030508',pointBorderWidth:2},
+        {label:'Forecast',data:forecast,borderColor:'#00e5a0',borderWidth:2,borderDash:[6,4],tension:.4,fill:false,pointRadius:3,pointBackgroundColor:'#00e5a0',pointBorderColor:'#030508',pointBorderWidth:2}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,backgroundColor:'rgba(8,12,22,0.95)',borderColor:'rgba(255,255,255,0.1)',borderWidth:1}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'$'+v+'M'}}
+      },
+      animation:{duration:1500,easing:'easeInOutQuart'}
+    }
+  });
+}
+
+// PULSE
+function initPulseChart(){
+  const ctx = C('pulseChart');
+  if(!ctx) return;
+  const d = Array.from({length:30},()=>Math.random()*40+60);
+  new Chart(ctx,{type:'bar',data:{labels:d.map((_,i)=>i),datasets:[{data:d,backgroundColor:d.map(v=>v>85?'rgba(0,229,160,0.5)':v>70?'rgba(61,127,255,0.4)':'rgba(255,51,85,0.4)'),borderWidth:0,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}},animation:{duration:800}}});
+}
+
+// SEGMENT
+function initSegmentChart(){
+  const ctx = C('segmentChart');
+  if(!ctx) return;
+  new Chart(ctx,{type:'doughnut',data:{labels:['Enterprise','Mid-Market','SMB','Startup'],datasets:[{data:[42,28,18,12],backgroundColor:['rgba(61,127,255,0.8)','rgba(0,229,160,0.8)','rgba(139,92,246,0.8)','rgba(245,158,11,0.8)'],borderColor:'rgba(3,5,8,0.5)',borderWidth:2,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10,font:{size:10}}}},animation:{duration:1000}}});
+}
+
+// REVENUE BAR
+function initRevChart(){
+  const ctx = C('revChart');
+  if(!ctx) return;
+  new Chart(ctx,{type:'bar',data:{labels:MONTHS.slice(0,10),datasets:[{label:'New Business',data:[0.9,1.0,1.2,1.3,1.5,1.6,1.7,1.8,1.8,1.9],backgroundColor:'rgba(61,127,255,0.7)',borderRadius:4,stack:'s'},{label:'Expansion',data:[0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.2,1.3,1.4],backgroundColor:'rgba(0,229,160,0.6)',borderRadius:4,stack:'s'},{label:'Renewal',data:[0.4,0.5,0.5,0.5,0.6,0.6,0.7,0.7,0.7,0.7],backgroundColor:'rgba(139,92,246,0.6)',borderRadius:4,stack:'s'},{label:'Services',data:[0.2,0.2,0.3,0.3,0.2,0.3,0.3,0.3,0.3,0.2],backgroundColor:'rgba(245,158,11,0.5)',borderRadius:4,stack:'s'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10}}},scales:{x:{grid:{display:false},stacked:true},y:{stacked:true,ticks:{callback:v=>'$'+v+'M'}}},animation:{duration:1200}}});
+}
+
+// MIX DONUT
+function initMixChart(){
+  const ctx = C('mixChart');
+  if(!ctx) return;
+  new Chart(ctx,{type:'doughnut',data:{labels:['New Business','Expansion','Renewal','Services'],datasets:[{data:[45,30,20,5],backgroundColor:['rgba(61,127,255,0.8)','rgba(0,229,160,0.8)','rgba(139,92,246,0.8)','rgba(245,158,11,0.8)'],borderColor:'rgba(3,5,8,0.5)',borderWidth:2,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{display:false}},animation:{duration:1000}}});
+}
+
+// FORECAST
+function initForecastChart(){
+  const ctx = C('forecastChart');
+  if(!ctx) return;
+  const allMonths = [...MONTHS,'Jan\'25','Feb\'25','Mar\'25'];
+  const actual = [2.1,2.4,2.8,3.0,3.3,3.6,3.9,4.0,4.1,4.2,null,null,null,null,null];
+  const fcst = [null,null,null,null,null,null,null,null,null,4.2,4.6,5.1,4.9,5.3,5.8];
+  const upper = fcst.map(v=>v?v*1.08:null);
+  const lower = fcst.map(v=>v?v*0.92:null);
+  new Chart(ctx,{type:'line',data:{labels:allMonths,datasets:[
+    {label:'Actual',data:actual,borderColor:'#3d7fff',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointBackgroundColor:'#3d7fff'},
+    {label:'Forecast',data:fcst,borderColor:'#00e5a0',borderWidth:2,borderDash:[5,3],tension:.4,fill:false,pointRadius:3,pointBackgroundColor:'#00e5a0'},
+    {label:'Upper',data:upper,borderColor:'rgba(0,229,160,0.2)',borderWidth:1,tension:.4,fill:2,backgroundColor:'rgba(0,229,160,0.06)',pointRadius:0},
+    {label:'Lower',data:lower,borderColor:'rgba(0,229,160,0.2)',borderWidth:1,tension:.4,fill:false,pointRadius:0},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{callback:v=>'$'+v+'M'}}},animation:{duration:1400}}});
+}
+
+// FUNNEL CHART
+function initFunnelChart(){
+  const ctx = C('funnelChart');
+  if(!ctx) return;
+  new Chart(ctx,{type:'bar',data:{labels:['Lead→Qual','Qual→Prop','Prop→Neg','Neg→Won'],datasets:[{label:'Conversion %',data:[62,61,37,63],backgroundColor:['rgba(0,212,255,0.6)','rgba(139,92,246,0.6)','rgba(255,51,85,0.6)','rgba(0,229,160,0.6)'],borderRadius:6,borderWidth:0},{label:'Drop-off %',data:[38,39,63,37],backgroundColor:['rgba(255,255,255,0.04)','rgba(255,255,255,0.04)','rgba(255,255,255,0.04)','rgba(255,255,255,0.04)'],borderRadius:6,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{stacked:true,ticks:{callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}},y:{stacked:true,grid:{display:false}}},animation:{duration:1200}}});
+}
+
+// RADAR
+function initRadarChart(){
+  const ctx = C('radarChart');
+  if(!ctx) return;
+  new Chart(ctx,{type:'radar',data:{labels:['Close Rate','Deal Size','Pipeline','Activity','Velocity','NRR'],datasets:[
+    {label:'Jordan Smith',data:[92,88,95,82,90,96],borderColor:'rgba(245,158,11,0.8)',backgroundColor:'rgba(245,158,11,0.12)',borderWidth:2,pointBackgroundColor:'#f59e0b'},
+    {label:'Team Avg',data:[64,70,68,75,65,72],borderColor:'rgba(61,127,255,0.5)',backgroundColor:'rgba(61,127,255,0.06)',borderWidth:1.5,borderDash:[4,4],pointBackgroundColor:'#3d7fff'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10}}},scales:{r:{grid:{color:'rgba(255,255,255,0.06)'},pointLabels:{color:'#5a6a8a',font:{size:10}},ticks:{display:false},suggestedMin:0,suggestedMax:100}},animation:{duration:1000}}});
+}
+
+// REGION
+function initRegionChart(){
+  const ctx = C('regionChart');
+  if(!ctx) return;
+  new Chart(ctx,{type:'bar',data:{labels:['N.America','Europe','APAC','LATAM','MEA'],datasets:[{label:'Revenue $M',data:[18.4,12.7,9.2,5.8,2.5],backgroundColor:['rgba(61,127,255,0.7)','rgba(0,229,160,0.7)','rgba(255,51,85,0.7)','rgba(245,158,11,0.7)','rgba(139,92,246,0.7)'],borderRadius:6,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>'$'+v+'M'}}},animation:{duration:1200}}});
+}
+
+// SIM CHART
+let simChartInst = null;
+function initSimChart(){
+  const ctx = C('simChart');
+  if(!ctx) return;
+  simChartInst = new Chart(ctx,{type:'line',data:{labels:MONTHS,datasets:[
+    {label:'Baseline',data:[2.1,2.4,2.8,3.0,3.3,3.6,3.9,4.0,4.1,4.2,4.5,4.8],borderColor:'rgba(61,127,255,0.5)',borderWidth:1.5,borderDash:[4,3],tension:.4,fill:false,pointRadius:0},
+    {label:'Simulated',data:[2.1,2.4,2.8,3.0,3.3,3.6,3.9,4.0,4.1,4.2,4.5,4.8],borderColor:'#00e5a0',borderWidth:2,tension:.4,fill:true,backgroundColor:'rgba(0,229,160,0.06)',pointRadius:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:10}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{callback:v=>'$'+v+'M'}}},animation:{duration:600}}});
+}
+
+// SIM STATE
+const simState = {mkt:1,churn:0,price:0,hc:0,win:0};
+function updateSim(key,val){
+  simState[key]=parseFloat(val);
+  const labels = {mkt:'v-mkt',churn:'v-churn',price:'v-price',hc:'v-hc',win:'v-win'};
+  const formats = {mkt:v=>v+'×',churn:v=>(v>0?'+':'')+v+'%',price:v=>(v>0?'+':'')+v+'%',hc:v=>(v>0?'+':'')+v+' reps',win:v=>(v>0?'+':'')+v+'%'};
+  document.getElementById(labels[key]).textContent = formats[key](parseFloat(val));
+  recalcSim();
+}
+function recalcSim(){
+  const base=48.6, baseArr=50.4, baseLeads=4820, baseCAC=2140;
+  const mktMult = simState.mkt;
+  const churnImpact = simState.churn * 0.8;
+  const priceImpact = simState.price * 0.6;
+  const hcImpact = simState.hc * 0.35;
+  const winImpact = simState.win * 0.5;
+  const total = mktMult + churnImpact/100 + priceImpact/100 + hcImpact/100 + winImpact/100 - 1;
+  const newRev = base * (1 + total*0.4);
+  const newArr = newRev * 1.037;
+  const newLeads = Math.round(baseLeads * mktMult);
+  const newCAC = Math.round(baseCAC / (mktMult * (1 + simState.win*0.01)));
+  const newMargin = Math.max(60, 71.2 - (mktMult-1)*3 + priceImpact*0.2);
+  const newPayback = Math.max(8, 14.2 / (1+winImpact/100));
+  const fmt=v=>v>=0?'pos':'neg';
+  document.getElementById('sim-rev').textContent='$'+newRev.toFixed(1)+'M';
+  document.getElementById('sim-rev').className='sim-out-val '+fmt(newRev-base);
+  document.getElementById('sim-arr').textContent='$'+newArr.toFixed(1)+'M';
+  document.getElementById('sim-leads').textContent=newLeads.toLocaleString();
+  document.getElementById('sim-cac').textContent='$'+newCAC.toLocaleString();
+  document.getElementById('sim-margin').textContent=newMargin.toFixed(1)+'%';
+  document.getElementById('sim-payback').textContent=newPayback.toFixed(1)+' mo';
+  const delta = ((newRev-base)/base*100).toFixed(1);
+  document.getElementById('simChangeBadge').textContent = (delta>0?'+':'')+delta+'% vs baseline';
+  if(simChartInst){
+    const baseLine = [2.1,2.4,2.8,3.0,3.3,3.6,3.9,4.0,4.1,4.2,4.5,4.8];
+    simChartInst.data.datasets[1].data = baseLine.map(v=>+(v*(1+total*0.4)).toFixed(2));
+    simChartInst.update('none');
+  }
+}
+function resetSim(){
+  simState.mkt=1;simState.churn=0;simState.price=0;simState.hc=0;simState.win=0;
+  document.querySelectorAll('input[type=range]').forEach((el,i)=>{
+    el.value=[1,0,0,0,0][i];
+  });
+  document.getElementById('v-mkt').textContent='1.0×';
+  document.getElementById('v-churn').textContent='0%';
+  document.getElementById('v-price').textContent='0%';
+  document.getElementById('v-hc').textContent='0';
+  document.getElementById('v-win').textContent='0%';
+  recalcSim();
+  toast('Simulation reset to baseline','info');
+}
+
+// ── NAV ──
+const titles = {overview:'AI Revenue Control Center',revenue:'Revenue Command Center',forecast:'Predictive Forecast Engine',funnel:'Sales Funnel Intelligence',reps:'Sales Rep Intelligence',regions:'Regional Revenue Intelligence',risks:'Opportunity & Risk Detection',insights:'AI Insights Engine',sim:'Scenario Simulation Lab'};
+function goTo(page, el){
+  qsa('.view').forEach(v=>v.classList.remove('on'));
+  qsa('.nav-item').forEach(n=>n.classList.remove('on'));
+  const v = document.getElementById('v-'+page);
+  if(v) v.classList.add('on');
+  if(el) el.classList.add('on');
+  document.getElementById('tbTitle').textContent = titles[page]||'';
+}
+
+// ── SIDEBAR TOGGLE ──
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('mini');
+}
+
+// ── NOTIFICATIONS ──
+let notifOpen=false;
+function toggleNotif(){
+  notifOpen=!notifOpen;
+  document.getElementById('notifPanel').classList.toggle('on',notifOpen);
+}
+document.addEventListener('click',e=>{
+  const panel=document.getElementById('notifPanel');
+  const bell=document.querySelector('.notif');
+  if(notifOpen && !panel.contains(e.target) && !bell.contains(e.target)){
+    notifOpen=false;
+    panel.classList.remove('on');
+  }
+},true);
+function markAllRead(e){
+  e.stopPropagation();
+  qsa('.np-item.unread').forEach(el=>el.classList.remove('unread'));
+  document.getElementById('notifCount').textContent='0';
+  toast('All alerts marked as read ✓','ok');
+}
+function npClick(el,msg,type){
+  el.classList.remove('unread');
+  document.getElementById('notifCount').textContent=qsa('.np-item.unread').length;
+  toast(msg,type);
+}
+
+// ── PERIOD CHANGE ──
+function onPeriodChange(){
+  toast('Data range updated: '+document.getElementById('periodSel').options[document.getElementById('periodSel').selectedIndex].text,'info');
+}
+
+// ── AI INSIGHTS ──
+function runAIInsights(){
+  goTo('insights', Array.from(qsa('.nav-item')).find(n=>n.dataset.p==='insights'));
+  const box = document.getElementById('aiBox');
+  box.innerHTML = `<div style="padding:2rem;display:flex;align-items:center;justify-content:center;gap:.8rem;flex-direction:column"><div class="ai-think" style="font-size:1.1rem"><span></span><span></span><span></span><span style="margin-left:8px;color:var(--text2);font-size:.85rem">Neural intelligence layer analyzing CRM + pipeline + signals…</span></div></div>`;
+  setTimeout(()=>{
+    document.getElementById('aiTime').textContent = new Date().toLocaleTimeString();
+    box.innerHTML = `
+    <div style="color:var(--text);line-height:1.85;font-size:.83rem">
+    <div style="font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;margin-bottom:1rem;color:#a78bfa">Executive Neural Report · ${new Date().toLocaleDateString()}</div>
+
+    <strong style="color:var(--red);font-size:.9rem;display:block;margin-bottom:5px">1. [CRITICAL] APAC Revenue Contraction Detected</strong>
+    Enterprise revenue in APAC declined 12% in 3 consecutive weeks due to reduced lead conversion efficiency. Three enterprise accounts (combined ARR: $1.4M) show NPS deterioration below 6.0. Recommend immediate territory review and CS escalation within 72 hours.
+    <br><br>
+
+    <strong style="color:var(--amber);font-size:.9rem;display:block;margin-bottom:5px">2. [WARNING] Q4 Forecast Gap: $3.4M Shortfall Projected</strong>
+    At current pipeline velocity (avg close rate 38.4%), Q4 closes at $11.4M vs $14.8M target. The 22-day remaining window requires 34 additional enterprise closes at avg deal size $100K. Accelerate top 30 pipeline deals immediately.
+    <br><br>
+
+    <strong style="color:var(--emerald);font-size:.9rem;display:block;margin-bottom:5px">3. [OPPORTUNITY] $2.1M Upsell Ready — 47 Premium Accounts</strong>
+    AI detected expansion signals (product usage spikes, seat growth) in 47 premium accounts. High upsell probability (>72%) detected for AI Intelligence Layer add-on. Estimated revenue unlock: $2.1M with personalized campaign in next 30 days.
+    <br><br>
+
+    <strong style="color:var(--cyan);font-size:.9rem;display:block;margin-bottom:5px">4. [INTELLIGENCE] Demo-First Sequence 2.4× Velocity Multiplier</strong>
+    Deals entering with demo-first outreach close 2.4× faster than email-first sequences. Applying this routing to 120 qualified leads in current pipeline could unlock $8.4M in 45 days without additional headcount investment.
+    <br><br>
+
+    <strong style="color:var(--accent2);font-size:.9rem;display:block;margin-bottom:5px">5. [INTELLIGENCE] Pricing Optimization Opportunity</strong>
+    Conversion efficiency improved 8.3% following Q3 pricing model update. Model suggests a further 12% enterprise tier adjustment ($12K → $13.4K ARR) with <3% churn risk, yielding +$1.8M annual revenue impact.
+    </div>
+    <div style="margin-top:1.5rem;font-size:.65rem;color:rgba(255,255,255,.3);font-family:'DM Mono',monospace;border-top:1px solid var(--border);padding-top:.8rem">
+    ✦ AXIOM Neural Intelligence · Full CRM + Pipeline + Signal Analysis · Confidence: 87.3% · ${new Date().toLocaleTimeString()}
+    </div>`;
+    toast('Neural insights report generated ✓','ok');
+  },1600);
+}
+
+// ── EXPORT ──
+function exportData(){
+  const csv = `AXIOM Revenue Intelligence Export\nGenerated: ${new Date().toISOString()}\n\nMetric,Value\nTotal Revenue YTD,$48.6M\nMRR,$4.2M\nARR,$50.4M\nWin Rate,38.4%\nPipeline Value,$31.7M\nQ4 Forecast,$14.8M\nNRR,118%`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = `axiom-revenue-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  toast('Revenue data exported ✓','ok');
+}
+
+// ── TOAST ──
+function toast(msg,type='info'){
+  const w=document.getElementById('toastWrap');
+  const cols={ok:'var(--emerald)',error:'var(--red)',warn:'var(--amber)',info:'var(--accent)'};
+  const icons={ok:'✦',error:'✕',warn:'⚠',info:'●'};
+  const t=document.createElement('div');
+  t.className='toast';
+  t.style.borderLeftColor=cols[type]||cols.info;
+  t.innerHTML=`<span style="color:${cols[type]}">${icons[type]}</span><span style="color:rgba(255,255,255,.82)">${msg}</span>`;
+  w.appendChild(t);
+  setTimeout(()=>{t.style.transition='all .3s';t.style.opacity='0';t.style.transform='translateX(20px)';setTimeout(()=>t.remove(),300);},4000);
+}
+</script>
+</body>
+</html>
